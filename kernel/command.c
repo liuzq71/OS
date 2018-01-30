@@ -1,14 +1,16 @@
 #include <sys/types.h>
 #include <assert.h>
-#include "command.h"
-#include "yaffsfs.h"
-#include "syscall.h"
+
+#include <syscall.h>
 //TODO
-#include "sys/syscall.h"
-#include "sys/err.h"
-#include "sys/dirent.h"
-#include "sys/stat.h"
-#include "sched.h"
+#include <sys/syscall.h>
+#include <sys/err.h>
+#include <sys/dirent.h>
+#include <sys/stat.h>
+#include <sched.h>
+#include <rtc.h>
+#include "yaffsfs.h"
+#include "command.h"
 #define CMD_MAX_CMD_NUM 50
 #define CMD_MAXARGS 10
 #undef kmalloc
@@ -103,7 +105,7 @@ CMD_DEFINE(ls_test, "ls [OPTION] [FILE]", "NULL") {
 			dirent = (char *)dirent + dirent->d_reclen;
 			printf("%25s\n", dirent->d_name);
 		} while (dirent->d_off);
-	}while (ret);
+	} while (ret);
 	return 0;
 }
 CMD_DEFINE(rm, "NULL", "NULL") {
@@ -332,6 +334,42 @@ CMD_DEFINE(mkdir, "mkdir", "mkdir") {
 	}
 	return 1;
 }
+CMD_DEFINE(RTC, "RTC", "RTC") {
+	char data[7] = {0};
+	char *week_str[7] = {"一", "二", "三", "四", "五", "六", "日"};
+	char *week;
+	if (argc == 1) {
+		RTC_Read(&data[0], &data[1], &data[2], &data[3], &data[4], &data[5], &data[6]);
+
+		if (data[3] >= 1 && data[3] <= 7) {
+			week = week_str[data[3] - 1];
+			printf("%d年,%d月,%d日,星期%s,%d点,%d分,%d秒\n", 2000 + data[0],
+			       data[1], data[2], week, data[4], data[5], data[6]);
+		}else{
+			printf("error!\n");
+			return 1;
+		}
+	} else if (argc == 8) {
+		for (int i = 0; i < 7; i++) {
+			data[i] = simple_strtoul(argv[i + 1], NULL, 10);
+		}
+		//year:0-99
+		RTC_Set(data[0], data[1], data[2], data[3], data[4], data[5], data[6]);
+		if (data[3] >= 1 && data[3] <= 7) {
+			week = week_str[data[3] - 1];
+			printf("%d年,%d月,%d日,星期%s,%d点,%d分,%d秒\n", 2000 + data[0],
+					   data[1], data[2], week, data[4], data[5], data[6]);
+			printf("设置成功\n");
+		}else{
+			printf("error!\n");
+			return 1;
+		}
+	}else{
+		printf("error!参数数量异常\n");
+		return 1;
+	}
+	return 0;
+}
 CMD_DEFINE(help, "help", "help") {
 	printf("cmd name:%s\n", ct->name);
 	for (int i = 0; i < argc; i++) {
@@ -362,6 +400,7 @@ cmd_table *ct_list[] = {
 	&ct_color,
 	&ct_rename,
 	&ct_mkdir,
+	&ct_RTC,
 	NULL
 };
 

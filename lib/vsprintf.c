@@ -18,7 +18,7 @@
 
 //#include <stdarg.h>
 //#include <linux/module.h>
-#include "types.h"
+#include "sys/types.h"
 #include "kernel.h"
 
 #include "ctype.h"

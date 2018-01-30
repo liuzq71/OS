@@ -5,7 +5,7 @@
  * native C library.
  */
 
-#include "types.h"
+#include "sys/types.h"
 
 #ifndef va_arg
 

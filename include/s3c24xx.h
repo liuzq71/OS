@@ -127,6 +127,27 @@
 #define LPCSEL      (*(volatile unsigned long *)0x4d000060) //LPC3600 Control
 #define PALETTE     0x4d000400                              //Palette start address
 
+
+/* RTC registers */
+#define rRTCCON         (*(volatile unsigned char *)0x57000040)
+#define rTICNT          (*(volatile unsigned char *)0x57000044)
+#define rRTCALM         (*(volatile unsigned char *)0x57000050)
+#define rALMSEC         (*(volatile unsigned char *)0x57000054)
+#define rALMMIN         (*(volatile unsigned char *)0x57000058)
+#define rALMHOUR        (*(volatile unsigned char *)0x5700005C)
+#define rALMDATE        (*(volatile unsigned char *)0x57000060)
+#define rALMMON         (*(volatile unsigned char *)0x57000064)
+#define rALMYEAR        (*(volatile unsigned char *)0x57000068)
+#define rRTCRST         (*(volatile unsigned char *)0x5700006C)
+#define rBCDSEC         (*(volatile unsigned char *)0x57000070)
+#define rBCDMIN         (*(volatile unsigned char *)0x57000074)
+#define rBCDHOUR        (*(volatile unsigned char *)0x57000078)
+#define rBCDDATE        (*(volatile unsigned char *)0x5700007C)
+#define rBCDDAY         (*(volatile unsigned char *)0x57000080)
+#define rBCDMON         (*(volatile unsigned char *)0x57000084)
+#define rBCDYEAR        (*(volatile unsigned char *)0x57000088)
+
+
 #define ISR_EINT0_OFT     0
 #define ISR_EINT1_OFT     1
 #define ISR_EINT2_OFT     2
