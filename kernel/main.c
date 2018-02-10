@@ -7,29 +7,42 @@
 #include "framebuffer.h"
 #include "command.h"
 int main() {
-	nand_init();
 	Port_Init();
-	uart0_init();							// ²¨ÌØÂÊ115200£¬8N1(8¸öÊı¾İÎ»£¬ÎŞĞ£ÑéÎ»£¬1¸öÍ£Ö¹Î»)
-	timer_init();
-
-	Lcd_Port_Init();						// ÉèÖÃLCDÒı½Å
-	Tft_Lcd_Init(MODE_TFT_16BIT_480272);	// ³õÊ¼»¯LCD¿ØÖÆÆ÷
-	Lcd_PowerEnable(0, 1);					// ÉèÖÃLCD_PWRENÓĞĞ§£¬ËüÓÃÓÚ´ò¿ªLCDµÄµçÔ´
-	Lcd_EnvidOnOff(1);						// Ê¹ÄÜLCD¿ØÖÆÆ÷Êä³öĞÅºÅ
+	uart0_init();							// æ³¢ç‰¹ç‡115200ï¼Œ8N1(8ä¸ªæ•°æ®ä½ï¼Œæ— æ ¡éªŒä½ï¼Œ1ä¸ªåœæ­¢ä½)
+	
+	
+	Lcd_Port_Init();						// è®¾ç½®LCDå¼•è„š
+	Tft_Lcd_Init(MODE_TFT_16BIT_480272);	// åˆå§‹åŒ–LCDæ§åˆ¶å™¨
+	Lcd_PowerEnable(0, 1);					// è®¾ç½®LCD_PWRENæœ‰æ•ˆï¼Œå®ƒç”¨äºæ‰“å¼€LCDçš„ç”µæº
+	Lcd_EnvidOnOff(1);						// ä½¿èƒ½LCDæ§åˆ¶å™¨è¾“å‡ºä¿¡å·
+	
+	ClearScr(0x00);						// æ¸…å±
+	lcd_set_text_color(0xffffff);
+	lcd_set_background_color(0x00);
 	{
-		ClearScr(0x00);						// ÇåÆÁ
-		lcd_set_text_color(0xffffff);
-		lcd_set_background_color(0x00);
-		printf("Initializing UART...\n");
-		printf("Initializing GPIO ports...\n");
-		printf("Initializing the LCD controller...\n");
-
+		printf("\n\n************************************************\n");
+		printf("æ­£åœ¨åˆå§‹åŒ–UART...\n");
+		printf("æ­£åœ¨åˆå§‹åŒ–GPIOs...\n");
+		printf("æ­£åœ¨åˆå§‹åŒ–LCD controller...\n");
+		
+		printf("æ­£åœ¨åˆå§‹åŒ–mmu...\n");
+		mmu_init();
+		
+		printf("æ­£åœ¨åˆå§‹åŒ–å†…å­˜åˆ†é…å™¨...\n");
 		init_page_map();
 		kmalloc_init();
-
+		
+		printf("æ­£åœ¨åˆå§‹åŒ–nand flashé©±åŠ¨...\n");
+		nand_init();
+		
+		printf("æ­£åœ¨åˆå§‹åŒ–å®šæ—¶å™¨é©±åŠ¨...\n");
+		timer_init();
+		
+		printf("æ­£åœ¨åˆå§‹åŒ–yaffsæ–‡ä»¶ç³»ç»Ÿ...\n");
 		init_yaffs_fs();
-
+		printf("æ­£åœ¨å¼€å¯ä¸­æ–­...\n");
 		enable_irq();
+		
 		//usb_init_slave();
 		task_init();
 		//cmd_loop();

@@ -83,8 +83,8 @@ Reset:
 ret_initirq:
     
 	
-	bl  create_page_table	@ 设置页表
-    bl  mmu_init			@ 启动MMU
+	@bl  create_page_table	@ 设置页表
+    @bl  mmu_init			@ 启动MMU
 	
 	
 	@跳转地址过大不能用bl指令
