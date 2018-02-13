@@ -1,11 +1,9 @@
 #include <stdio.h>
-#include <stdio.h>
 #include <s3c24xx.h>
 #include "serial.h"
 #include "lcdlib.h"
 #include "lcddrv.h"
 #include "framebuffer.h"
-#include "command.h"
 int main() {
 	Port_Init();
 	uart0_init();							// 波特率115200，8N1(8个数据位，无校验位，1个停止位)
@@ -42,8 +40,8 @@ int main() {
 		init_yaffs_fs();
 		printf("正在开启中断...\n");
 		enable_irq();
-		
-		//usb_init_slave();
+		printf("正在初始化usb slave...\n");
+		usb_init_slave();
 		task_init();
 		//cmd_loop();
 		while (1);

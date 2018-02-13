@@ -27,10 +27,11 @@ void iput(struct inode *inode) {
 	assert(inode && inode->i_op && inode->i_op->evict_inode);
 	if ((!inode) || (!inode->i_op) || (!inode->i_op->evict_inode))
 		return;
-	inode->i_nlink--;
-	assert(inode->i_nlink >= 0);
-	if (inode->i_nlink == 0)
-		inode->i_op->evict_inode(inode);
+	inode->i_count--;
+	assert(inode->i_count >= 0);
+	//TODO:暂时不操作
+	//if (inode->i_count == 0)
+	//	inode->i_op->evict_inode(inode);
 }
 
 extern dev_t mount_inode(struct inode *inode);

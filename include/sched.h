@@ -53,7 +53,31 @@ typedef struct task_struct
 	 uid_t uid;
 	 gid_t gid;
 } PCB;
-
+struct mm_struct {
+    unsigned long total_vm, locked_vm, shared_vm, exec_vm;
+    //total_vm 进程地址空间的大小(页数）
+    //locked_vm 锁住而不能换出的页的个数
+    //shared_vm 共享文件内存映射中的页数
+    unsigned long stack_vm, reserved_vm, def_flags, nr_ptes;
+    //stack_vm 用户堆栈中的页数
+    //reserved_vm 在保留区中的页数或者在特殊线性区中的页数
+    //def_flags 线性区默认的访问标志
+    //nr_ptes 进程的页表数
+    unsigned long start_code, end_code, start_data, end_data;
+    //start_code 可执行代码的起始地址
+    //end_code 可执行代码的最后地址
+    //start_data已初始化数据的起始地址
+    // end_data已初始化数据的最后地址
+    unsigned long start_brk, brk, start_stack;
+    //start_stack堆的起始位置
+    //brk堆的当前的最后地址
+    //用户堆栈的起始地址
+    unsigned long arg_start, arg_end, env_start, env_end;
+    //arg_start 命令行参数的起始地址
+    //arg_end命令行参数的起始地址
+    //env_start环境变量的起始地址
+    //env_end环境变量的最后地址
+};
 // 进程队列数组
 extern PCB task[NR_TASK];
 // 当前进程结构体指针

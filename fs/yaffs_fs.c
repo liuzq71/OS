@@ -124,7 +124,7 @@ struct inode *iget_locked(struct super_block *sb, unsigned long ino)
 	//for(i=&(sb->s_inodes);i!=&(sb->s_inodes);i=i->next){
 		struct inode *inode = list_entry(i,struct inode,i_list);
 		if(inode->i_ino == ino){
-			inode->i_nlink++;
+			inode->i_count++;
 			return inode;
 		}
 	}
@@ -132,7 +132,8 @@ struct inode *iget_locked(struct super_block *sb, unsigned long ino)
 	
 	inode->i_state &=I_NEW;
 	inode->i_ino = ino;
-	inode->i_nlink = 1;
+	inode->i_nlink = 1;//TODO:vfs机制未完善，，设个正值，防止文件被删除
+	inode->i_count = 1;
 	list_add_tail(&(inode->i_list),&(sb->s_inodes));
 	return inode;
 }
@@ -692,6 +693,22 @@ static int yaffs_file_read(struct file *f, const char *buf, size_t n,
 	yaffs_gross_unlock(dev);
 	return (n_read == 0) && (n > 0) ? -EINVAL : n_read;
 }
+
+static void yaffs_unstitch_obj(struct inode *inode, struct yaffs_obj *obj)
+{
+	/* Clear the association between the inode and
+	 * the struct yaffs_obj.
+	 */
+	obj->my_inode = NULL;
+	yaffs_inode_to_obj_lv(inode) = NULL;
+
+	/* If the object freeing was deferred, then the real
+	 * free happens now.
+	 * This should fix the inode inconsistency problem.
+	 */
+	//TODO:
+	//yaffs_handle_defered_free(obj);
+}
 /* yaffs_evict_inode combines into one operation what was previously done in
  * yaffs_clear_inode() and yaffs_delete_inode()
  *
@@ -714,24 +731,26 @@ static void yaffs_evict_inode(struct inode *inode)
 		// deleteme = 1;
 	// truncate_inode_pages(&inode->i_data, 0);
 	// end_writeback(inode);
-	if (!inode->i_nlink)
-		deleteme = 1;
-	if (deleteme && obj) {
+	
+	
+	// if (!inode->i_nlink)
+		// deleteme = 1;
+	// if (deleteme && obj) {
+		// dev = obj->my_dev;
+		// yaffs_gross_lock(dev);
+		// yaffs_del_obj(obj);
+		// yaffs_gross_unlock(dev);
+	// }
+	
+	if (obj) {
 		dev = obj->my_dev;
 		yaffs_gross_lock(dev);
-		yaffs_del_obj(obj);
+		yaffs_unstitch_obj(inode, obj);
 		yaffs_gross_unlock(dev);
 	}
 	list_del(&(inode->i_list));
 	memset(inode, 0, sizeof(struct inode));//TODO:
 	(kfree)(inode);
-	// if (obj) {
-		// dev = obj->my_dev;
-		// yaffs_gross_lock(dev);
-		// yaffs_unstitch_obj(inode, obj);
-		// yaffs_gross_unlock(dev);
-	// }
-	//TODO:释放inode
 }
 
 /*-----------------------------------------------------------------*/

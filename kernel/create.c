@@ -27,6 +27,7 @@ SYSCALL_DEFINE3(mknod, char *, filename, mode_t , mode, dev_t , dev) {
 		return -ENOENT;
 	}
 	res = dir_inode->i_op->mknod(dir_inode, basename, mode, dev);
+	printf("sys_mknod start!\n");
 	iput(dir_inode);
 	return res;
 }

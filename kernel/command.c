@@ -230,38 +230,40 @@ CMD_DEFINE(usbslave,
 	extern int download_run;
 	extern volatile U32 dwUSBBufBase;
 	extern volatile U32 dwUSBBufSize;
-#define FREE_RAM_SIZE 0x3000000   //下载48M限制
-	int g_bUSBWait = 1;
-	int load_addr = 0x30200000;
-	size_t len = ~0UL;
 
+	int g_bUSBWait = 1;
+#define BUF_SIZE (1024*1024)
 	/* download_run为1时表示将文件保存在USB Host发送工具dnw指定的位置
 	 * download_run为0时表示将文件保存在参数argv[2]指定的位置
 	 * 要下载程序到内存，然后直接运行时，要设置download_run=1，这也是这个参数名字的来由
 	 */
 	//由于0x3000000存放了页表，必须download_run = 0确保下载地址正确，即不采用上位机设置的地址
 	download_run = 0;//默认由下位机决定地址和大小
-	switch (argc) {
-		case 1:
-			break;
-		case 2:
-			load_addr = simple_strtoul(argv[1], NULL, 16);
-			break;
-		case 3:
-			load_addr = simple_strtoul(argv[1], NULL, 16);
-			g_bUSBWait = (int)simple_strtoul(argv[2], NULL, 16);
-			break;
-		default:
+	if (argc == 3) {
+		dwUSBBufBase = kmalloc(BUF_SIZE);
+		if(!dwUSBBufBase){
+			printf("malloc memory error!\n");
 			return 1;
-			break;
+		}
+		g_bUSBWait = (int)simple_strtoul(argv[1], NULL, 16);
+		dwUSBBufSize = BUF_SIZE;
+	}else{
+		return 1;
 	}
-
-	dwUSBBufBase = load_addr >= 0x30200000 ? load_addr : 0x30200000;
-	dwUSBBufSize = (FREE_RAM_SIZE & (~(0x80000 - 1))); //521K对齐
-	if (!download_run)
-		len = FREE_RAM_SIZE;
-
-	usb_receive(dwUSBBufBase, len, g_bUSBWait);
+	int size = usb_receive(dwUSBBufBase, dwUSBBufSize, g_bUSBWait);
+	int ret = 0;
+	if(size > 0 && size <= BUF_SIZE){
+		int handle = syscall(__NR_open, argv[2], O_CREAT | O_WRONLY , S_IREAD | S_IWRITE);
+		printf("open ret = %d\n", handle);
+		if (handle == -1) {
+			printf("Create %s failed\n", argv[2]);
+			return 1;
+		}
+		ret = syscall(__NR_write, handle, dwUSBBufBase, size);
+		printf("write ret = %d\n", ret);
+		ret = syscall(__NR_close, handle);
+		printf("close ret = %d\n", ret);
+	}
 	return 0;
 }
 CMD_DEFINE(mplay, "mplay", "mplay") {
