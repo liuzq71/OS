@@ -15,6 +15,7 @@
 #define CMD_MAXARGS 10
 #undef kmalloc
 #undef kfree
+#include <sys/mm.h>
 static const char *yaffs_file_type_str(struct yaffs_stat *stat) {
 	switch (stat->st_mode & S_IFMT) {
 		case S_IFREG:
@@ -280,6 +281,35 @@ CMD_DEFINE(assert_test, "assert_test", "assert_test") {
 	assert(1 != 1);
 	return 0;
 }
+CMD_DEFINE(malloc_test, "kmalloc_test", "kmalloc_test") {
+	int size;
+	void *addr;
+#define KMALLOC_TEST(x)\
+		addr = kmalloc(size = x);\
+		printf("kmalloc:size = %d, addr = %X\n", size, addr);\
+		kfree(addr);printf("end\n\n");
+	KMALLOC_TEST(0);
+	KMALLOC_TEST(1);
+	KMALLOC_TEST(2);
+	KMALLOC_TEST(31);
+	KMALLOC_TEST(32);
+	KMALLOC_TEST(4095);
+	KMALLOC_TEST(4096);
+	KMALLOC_TEST(PAGE_8K);
+	KMALLOC_TEST(PAGE_8K);
+	//KMALLOC_TEST(PAGE_1M);
+	// KMALLOC_TEST(PAGE_1M);
+#define PAGE_MALLOC_TEST(x,y)\
+		addr = get_free_pages(y, size = x);\
+		printf("get_free_pages:size = %d, addr = %X\n", 1<<size, addr);\
+		put_free_pages(addr,x);printf("\n");
+	PAGE_MALLOC_TEST(PAGE_ORDER_4K,PAGE_ALIGN_8K);
+	PAGE_MALLOC_TEST(PAGE_ORDER_4K,PAGE_ALIGN_128K);
+	PAGE_MALLOC_TEST(PAGE_ORDER_8K,PAGE_ALIGN_8K);
+	PAGE_MALLOC_TEST(PAGE_ORDER_8K,PAGE_ALIGN_16K);
+	PAGE_MALLOC_TEST(PAGE_ORDER_1M,PAGE_ALIGN_16K);
+	return 0;
+}
 CMD_DEFINE(delay, "delay", "delay") {
 	if (argv < 2)return;
 	for (volatile int i = 0; i < 10; i++) {
@@ -396,6 +426,7 @@ cmd_table *ct_list[] = {
 	&ct_mplay,
 	&ct_task_test,
 	&ct_assert_test,
+	&ct_malloc_test,
 	&ct_fs,
 	&ct_delay,
 	&ct_delay_l,

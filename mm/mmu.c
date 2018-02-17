@@ -242,3 +242,16 @@ void mmu_init(void) {
 	    : "r0", "r4"
 	);
 }
+void mmu_update(unsigned long ttb){
+	__asm__ (
+	    "mov    r0, #0\n"
+	    "mcr    p15, 0, r0, c7, c7, 0\n"    /* 使无效ICaches和DCaches */
+	    "mcr    p15, 0, r0, c7, c10, 4\n"   /* drain write buffer on v4 */
+	    "mov    r4, %0\n"                   /* r4 = 页表基址 */
+	    "mcr    p15, 0, r4, c2, c0, 0\n"    /* 设置页表基址寄存器 */
+		"mcr    p15, 0, r0, c8, c7, 0\n"    /* 使无效指令、数据TLB */
+	    : /* 无输出 */
+	    : "r" (ttb)
+	    : "r0", "r4"
+	);
+}

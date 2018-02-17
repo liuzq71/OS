@@ -30,7 +30,7 @@ libobjs		+= $(LIBDIR)/libgcc.a
 			
 export CC LD OBJCOPY OBJDUMP AR CFLAGS PWDPATH INCLUDEDIR
 
-.PHONY:all compile libc download yaffs2 clean distclean
+.PHONY:all compile libc download yaffs2 clean distclean app
 #如果compile没有生成新的obj,bootloader.bin 也不会更新
 all:compile bootloader.bin 
 
@@ -54,6 +54,9 @@ compile:
 	@make -C kernel
 	@make -C drivers/usbslave
 
+app:
+	@make -C app
+
 download:bootloader.bin
 	dnw bootloader.bin
 
@@ -67,7 +70,8 @@ clean:
 	@-make clean -C fs
 	@-make clean -C kernel
 	@-make clean -C drivers/usbslave
-	
+	@-make clean -C app
+
 distclean:
 	@-make clean -C init
 	@-make clean -C drivers
@@ -75,6 +79,7 @@ distclean:
 	@-make clean -C fs
 	@-make clean -C kernel
 	@-make clean -C drivers/usbslave
+	@-make clean -C app
 	@-make distclean -C lib
 	@-make distclean -C $(FSDIR)
 	@-make distclean -C $(FSTOOLSDIR)
