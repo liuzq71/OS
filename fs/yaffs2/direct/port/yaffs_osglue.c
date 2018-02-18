@@ -59,7 +59,7 @@ int yaffsfs_CheckMemRegion(const void *addr, size_t size, int write_request)
  *
  * Functions to allocate and free memory.
  */
-void *yaffsfs_malloc(size_t size)
+/* void *yaffsfs_malloc(size_t size)
 {
 	return kmalloc(size);
 }
@@ -67,13 +67,14 @@ void *yaffsfs_malloc(size_t size)
 void yaffsfs_free(void *ptr)
 {
 	kfree(ptr);
-}
+} */
 
 /*
  * yaffsfs_Lock()
  * yaffsfs_Unlock()
  * A single mechanism to lock and unlock yaffs. Hook up to a mutex or whatever.
  */
+//TODO:
 void yaffsfs_Lock(void)
 {
 	

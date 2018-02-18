@@ -68,10 +68,12 @@ void yaffs_qsort(void *aa, size_t n, size_t es,
 
 #endif
 
-#define kmalloc(x, flags) yaffsfs_malloc(x)
-#define kfree(x)   yaffsfs_free(x)
-#define vmalloc(x) yaffsfs_malloc(x)
-#define vfree(x) yaffsfs_free(x)
+//#define kmalloc(x, flags)	kmalloc(x)
+//为了兼容两种写法
+#define kmalloc(x, ...)	kmalloc(x)
+#define kfree(x) kfree(x)
+#define vmalloc(x) kmalloc(x)
+#define vfree(x) kfree(x)
 
 #define cond_resched()  do {} while (0)
 

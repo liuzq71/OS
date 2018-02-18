@@ -2,7 +2,7 @@
 #include <list.h>
 #include <sys/mm.h>
 #include <assert.h>
-
+#include <trace.h>
 struct kmem_cache {
 	unsigned int obj_size;
 	unsigned int obj_nr;
@@ -131,16 +131,16 @@ struct page *get_pages_from_list(unsigned int flags, int order) {
 			int i = 0;
 			plist = (&page_buddy[neworder]);
 			for(int i = 0;i < 12;i++){
-				printf("%X ",plist);
+				trace(KERN_DEBUG, "%X ",plist);
 				plist = plist->next;
 			}
-			printf("\n");
+			trace(KERN_DEBUG, "\n");
 			for (plist = (&page_buddy[neworder])->next;
 					plist != (&page_buddy[neworder]);
 					plist = (BUDDY_END(pg, neworder)->list.next)){
 				pg = list_entry(plist, struct page, list);
-				printf("*** i = %d  ",i);
-				printf("plist = %X ,vaddr = %X, order = %d, align = %d\n",plist,page_address(pg),order,(pg->flags & PAGE_ALIGN_MASK)>>4);
+				trace(KERN_DEBUG, "*** i = %d  ",i);
+				trace(KERN_DEBUG, "plist = %X ,vaddr = %X, order = %d, align = %d\n",plist,page_address(pg),order,(pg->flags & PAGE_ALIGN_MASK)>>4);
 				//检查是否满足字节对齐条件
 				//TODO:可以优化检查加快速度
 				//TODO:现在只检查页面其实地址，可以进一步检查页面地址范围内有无合适地址
@@ -167,8 +167,8 @@ OUT_OK:
 		list_add_chain_tail(tlst, tlst1, &page_buddy[neworder]);
 	}
 	if(pg->flags & PAGE_BUDDY_BUSY){
-		printf("get_pages_from_list:vaddr = %X, order = %d\n",page_address(pg),order);
-		while(1);
+		trace(KERN_ERR, "something must be wrong when you see this message,that probably means you are forcing to release a page that was not alloc at all\n");
+		assert(0);
 	}
 	pg->flags |= PAGE_BUDDY_BUSY;
 	pg->order = order;
@@ -179,10 +179,11 @@ OUT_OK:
 void put_pages_to_list(struct page *pg, int order) {
 	struct page *tprev, *tnext;
 	struct list_head *plist;
-	printf("put_pages_to_list:start\n");
+	trace(KERN_DEBUG, "put_pages_to_list:start\n");
 	if (!(pg->flags & PAGE_BUDDY_BUSY)) {
-		printf("put_pages_to_list:vaddr = %X, order = %d\n",pg->vaddr,order);
-		printf("something must be wrong when you see this message,that probably means you are forcing to release a page that was not alloc at all\n");
+		trace(KERN_DEBUG, "put_pages_to_list:vaddr = %X, order = %d\n",pg->vaddr,order);
+		trace(KERN_ERR, "something must be wrong when you see this message,that probably means you are forcing to release a page that was not alloc at all\n");
+		assert(0);
 		return;
 	}
 	pg->flags &= ~PAGE_BUDDY_BUSY;
@@ -191,34 +192,15 @@ void put_pages_to_list(struct page *pg, int order) {
 		tnext = NEXT_BUDDY_START(pg, order);
 		tprev = PREV_BUDDY_START(pg, order);
 		if ((tnext < KERNEL_PAGE_END) && (!(tnext->flags & PAGE_BUDDY_BUSY)) && (tnext->order == order)) {
-			printf("*** merge: order = %d, list = %X\n",order,&(tnext->list));
-			plist = (&page_buddy[order]);
-			for(int i = 0;i < 12;i++){
-				printf("%X ",plist);
-				plist = plist->next;
-			}
-			printf("\n");
+			trace(KERN_DEBUG, "*** merge: order = %d, list = %X\n",order,&(tnext->list));
 			pg->order++;
 			tnext->order = -1;
 			list_remove_chain(&(tnext->list), &(BUDDY_END(tnext, order)->list));
 			BUDDY_END(pg, order)->list.next = &(tnext->list);
 			tnext->list.prev = &(BUDDY_END(pg, order)->list);
-			
-			plist = (&page_buddy[order]);
-			for(int i = 0;i < 12;i++){
-				printf("%X ",plist);
-				plist = plist->next;
-			}
-			printf("\n");
 			continue;
 		} else if ((tprev >= KERNEL_PAGE_START) && (!(tprev->flags & PAGE_BUDDY_BUSY)) && (tprev->order == order)) {
-			printf("*** merge: order = %d, list = %X\n",order,&(tprev->list));
-			plist = (&page_buddy[order]);
-			for(int i = 0;i < 12;i++){
-				printf("%X ",plist);
-				plist = plist->next;
-			}
-			printf("\n");
+			trace(KERN_DEBUG, "*** merge: order = %d, list = %X\n",order,&(tprev->list));
 			pg->order = -1;
 
 			list_remove_chain(&(tprev->list), &(BUDDY_END(tprev, order)->list));
@@ -227,71 +209,53 @@ void put_pages_to_list(struct page *pg, int order) {
 
 			pg = tprev;
 			pg->order++;
-			plist = (&page_buddy[order]);
-			for(int i = 0;i < 12;i++){
-				printf("%X ",plist);
-				plist = plist->next;
-			}
-			printf("\n");
 			continue;
 		} else {
 			break;
 		}
 	}
-	printf("*** free: order = %d\n",order);
-	plist = (&page_buddy[order]);
-	for(int i = 0;i < 12;i++){
-		printf("%X ",plist);
-		plist = plist->next;
-	}
-	printf("\n");
+	trace(KERN_DEBUG, "*** free: order = %d\n",order);
 	list_add_chain(&(pg->list), &(BUDDY_END(pg, order)->list), &page_buddy[order]);
-	plist = (&page_buddy[order]);
-	for(int i = 0;i < 12;i++){
-		printf("%X ",plist);
-		plist = plist->next;
-	}
-	printf("\n");
-	printf("put_pages_to_list:end\n");
+	trace(KERN_DEBUG, "put_pages_to_list:end\n");
 }
 
 
 
 
 struct page *alloc_pages(unsigned int flags, int order) {
-	printf("alloc_pages:start\n");
+	trace(KERN_DEBUG, "alloc_pages:start\n");
 	struct page *pg = get_pages_from_list(flags, order);
 	if (pg == NULL)
 		return NULL;
 	for (int i = 0; i < (1 << order); i++) {
 		(pg + i)->flags |= PAGE_DIRTY;
 	}
-	printf("alloc_pages:vaddr = %X, order = %d\n",page_address(pg),order);
-	printf("alloc_pages:end\n");
+	trace(KERN_DEBUG, "alloc_pages:vaddr = %X, order = %d\n",page_address(pg),order);
+	trace(KERN_DEBUG, "alloc_pages:end\n");
 	return pg;
 }
 
 void free_pages(struct page *pg, int order) {
-	printf("free_pages:start\n");
+	trace(KERN_DEBUG, "free_pages:start\n");
 	for (int i = 0; i < (1 << order); i++) {
 		(pg + i)->flags &= ~PAGE_DIRTY;
 	}
 	put_pages_to_list(pg, order);
-	printf("free_pages:end\n");
+	trace(KERN_DEBUG, "free_pages:end\n");
 }
 
 void *get_free_pages(unsigned int flags, int order) {
 	struct page *page;
-	printf("get_free_pages:start\n");
+	trace(KERN_DEBUG, "get_free_pages:start\n");
 	page = alloc_pages(flags, order);
 	if (!page)
 		return NULL;
-	printf("get_free_pages:vaddr = %X, order = %d\n",page_address(page),order);
+	trace(KERN_DEBUG, "get_free_pages:vaddr = %X, order = %d\n",page_address(page),order);
 	return	page_address(page);
 }
 
 void put_free_pages(void *addr, int order) {
-	printf("put_free_pages:vaddr = %X\n",virt_to_page((unsigned int)addr));
+	trace(KERN_DEBUG, "put_free_pages:vaddr = %X\n",virt_to_page((unsigned int)addr));
 	free_pages(virt_to_page((unsigned int)addr), order);
 }
 

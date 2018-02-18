@@ -5,6 +5,9 @@
 #include "interrupt.h"
 #include <sched.h>
 #include <fcntl.h>
+#include <trace.h>
+
+
 PCB task[NR_TASK];								// 进程队列(PCB数组)，最多支持62个进程
 PCB *__current_task = NULL;						// 声明当前执行进程指针
 long runningCount = 0;							// 正在运行进程个数
@@ -50,7 +53,7 @@ void schedule(void) {
 	}
 	// 进程调度循环
 
-	dbgprintf("kernel:schedule\n");
+	trace(KERN_DEBUG, "kernel:schedule\n");
 	while (1) {
 		/*
 		*  循环找出进程队列里，就绪状态最高优先级进程，也就是count值最大进程，
@@ -88,10 +91,10 @@ void schedule(void) {
 	// 保存当前进程副本到p_tsk，将选出进程设置为当前运行进程
 	p_tsk = CURRENT_TASK();
 	CURRENT_TASK() = &task[next];
-	dbgprintf("__switch_to\n");
-	dbgprintf("\nold task id =%d", p_tsk->pid);
-	dbgprintf("\nnew task id =%d", next);
-	dbgprintf("\n");
+	trace(KERN_DEBUG, "__switch_to\n");
+	trace(KERN_DEBUG, "\nold task id =%d", p_tsk->pid);
+	trace(KERN_DEBUG, "\nnew task id =%d", next);
+	trace(KERN_DEBUG, "\n");
 	// 调用上下文切换函数
 	switch_to(p_tsk, &task[next]);
 }
@@ -105,7 +108,7 @@ void do_timer(void) {
 	int i = 0;
 	// 没有当前进程，说明进程还未创建，返回
 	if (!CURRENT_TASK()) {
-		printf("kernel:leaving do_timer,hasn't init task\n");
+		trace(KERN_WARNING, "kernel:leaving do_timer,hasn't init task\n");
 		return;
 	}
 	// 递减睡眠进程，睡眠时间到了，将其状态改为就绪态
@@ -136,7 +139,7 @@ void kthread_kill(int pid) {
 	int i;
 	if (pid == 0)
 		return;
-	printf("kernel:kill_task\r\n");
+	trace(KERN_DEBUG, "kernel:kill_task\r\n");
 	for (i = 1; i < NR_TASK; i++) {
 		if (task[i].state != TASK_UNALLOCATE) {
 			if (pid == task[i].pid) {
@@ -160,11 +163,11 @@ void debug_task() {
 	}
 	printf("\n");
 	struct cpu_context_save *context = &(CURRENT_TASK()->context);
-	printf("cpsr:%X,sp:%X,pc:%X\n", context->cpsr, context->sp, context->pc);
+	trace(KERN_DEBUG, "cpsr:%X,sp:%X,pc:%X\n", context->cpsr, context->sp, context->pc);
 }
 void task_start(__u32 sp, __u32 pc) {
-	printf("sp:%X,pc:%X\n", sp, pc);
-	printf("task_start\n");
+	trace(KERN_DEBUG, "sp:%X,pc:%X\n", sp, pc);
+	trace(KERN_DEBUG, "task_start\n");
 	asm(
 	    "mov sp,%0\n"
 	    "mov pc,%1\n"
@@ -192,7 +195,7 @@ void task_init() {
 	if (sp) {
 		kthread_create(task0, sp, 5);
 		if (task[0].state != TASK_RUNNING) {
-			printf("task init failed!");
+			trace(KERN_CRIT, "task init failed!");
 			while (1);
 		} else {
 			CURRENT_TASK() = &task[0];
@@ -207,55 +210,10 @@ void task_init() {
 	task_start(CURRENT_TASK()->context.sp, CURRENT_TASK()->context.pc);
 }
 static void task0() {
-	printf("task0:init\n");
+	trace(KERN_DEBUG, "task0:init\n");
 	while (1);
 }
-static void task1() {
-	// syscall(1, 1, "task1\n", 1);
-	printf("task1\n");
-	char buf[20] = "hello world!";
-	int fd = syscall(0, "test.txt", O_RDWR);
-	if (fd < 0) {
-		printf("open syscall test failed!\n");
-	} else {
-		printf("open syscall test succeed!fd= %d\n", fd);
-	}
-	printf("sys_read start!\n");
-	int ret = syscall(3, fd, buf, strlen(buf) + 1);
-	if (ret < 0) {
-		printf("write syscall test failed!errno:%d\n", -ret);
-	} else {
-		printf("write syscall test succeed!text:%s\n", buf);
-	}
-	printf("sys_close start!\n");
-	ret = syscall(1, fd);
-	if (ret < 0) {
-		printf("close syscall test failed!errno:%d\n", -ret);
-	} else {
-		printf("close syscall test succeed!\n");
-	}
-	while (1) {
-		syscall(3, 1, "1", 1);
 
-		for (volatile int i = 0; i < 10000; i++) {
-			for (volatile int j = 0; j < 300; j++) {
-
-			}
-		}
-	}
-}
-// void task2() {
-// syscall(1, 1, "task2\n", 1);
-// while (1) {
-// syscall(1, 1, "2", 1);
-
-// for (volatile int i = 0; i < 10000; i++) {
-// for (volatile int j = 0; j < 300; j++) {
-
-// }
-// }
-// }
-// }
 __u32 get_cpsr() {
 	int ret;
 	asm (
@@ -290,12 +248,12 @@ int kthread_create(unsigned long pc, void *data, long priority) {
 	}
 	// 如果没有可用Pid，出错，退出
 	if (pid == -1) {
-		printf("task has to max number!\r\n");
+		trace(KERN_CRIT, "task has to max number!\r\n");
 		return -1;
 	}
 	void *sp = kmalloc(512);
 	if (!sp) {
-		printf("memory allocation failed for the new task!");
+		trace(KERN_CRIT, "memory allocation failed for the new task!");
 		return -1;
 	}
 	// 进入进程创建，此过程中不能被中断打断

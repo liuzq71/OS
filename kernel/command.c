@@ -16,6 +16,9 @@
 #undef kmalloc
 #undef kfree
 #include <sys/mm.h>
+#include <trace.h>
+
+
 static const char *yaffs_file_type_str(struct yaffs_stat *stat) {
 	switch (stat->st_mode & S_IFMT) {
 		case S_IFREG:
@@ -141,7 +144,7 @@ CMD_DEFINE(touch, "NULL", "NULL") {
 	if (!(filename))
 		return 1;
 	int handle = syscall(__NR_open, filename, O_CREAT | O_WRONLY | O_APPEND, S_IREAD | S_IWRITE);
-	printf("open ret = %d\n", handle);
+	trace(KERN_DEBUG, "open ret = %d\n", handle);
 	if (handle == -1) {
 		printf("Create %s failed\n", filename);
 		return 1;
@@ -150,11 +153,11 @@ CMD_DEFINE(touch, "NULL", "NULL") {
 	}
 	if (test != NULL) {
 		ret = syscall(__NR_write, handle, test, strlen(test) + 1);
-		printf("write ret = %d\n", ret);
+		trace(KERN_DEBUG, "write ret = %d\n", ret);
 	}
 
 	ret = syscall(__NR_close, handle);
-	printf("close ret = %d\n", ret);
+	trace(KERN_DEBUG, "close ret = %d\n", ret);
 	return 0;
 }
 CMD_DEFINE(cat, "NULL", "NULL") {
@@ -195,10 +198,6 @@ CMD_DEFINE(cat, "NULL", "NULL") {
 	return 0;
 }
 CMD_DEFINE(erase, "erase nand flash blocks", "help") {
-	printf("cmd name:%s\n", ct->name);
-	for (int i = 0; i < argc; i++) {
-		printf("argv[%d]:%s\n", i, argv[i]);
-	}
 	for (int i = 19; i < 2048; i++) {
 		if (nand_erase_block(i) != 1)
 			printf("erase failed! block number:%d addr:%X\n", i, i << 17);
@@ -287,7 +286,11 @@ CMD_DEFINE(malloc_test, "kmalloc_test", "kmalloc_test") {
 #define KMALLOC_TEST(x)\
 		addr = kmalloc(size = x);\
 		printf("kmalloc:size = %d, addr = %X\n", size, addr);\
-		kfree(addr);printf("end\n\n");
+		kfree(addr);
+#define PAGE_MALLOC_TEST(x,y)\
+		addr = get_free_pages(y, size = x);\
+		printf("get_free_pages:size = %d, addr = %X\n", 1<<size, addr);\
+		put_free_pages(addr,x);
 	KMALLOC_TEST(0);
 	KMALLOC_TEST(1);
 	KMALLOC_TEST(2);
@@ -297,12 +300,9 @@ CMD_DEFINE(malloc_test, "kmalloc_test", "kmalloc_test") {
 	KMALLOC_TEST(4096);
 	KMALLOC_TEST(PAGE_8K);
 	KMALLOC_TEST(PAGE_8K);
-	//KMALLOC_TEST(PAGE_1M);
-	// KMALLOC_TEST(PAGE_1M);
-#define PAGE_MALLOC_TEST(x,y)\
-		addr = get_free_pages(y, size = x);\
-		printf("get_free_pages:size = %d, addr = %X\n", 1<<size, addr);\
-		put_free_pages(addr,x);printf("\n");
+	KMALLOC_TEST(PAGE_1M);
+	KMALLOC_TEST(PAGE_1M);
+
 	PAGE_MALLOC_TEST(PAGE_ORDER_4K,PAGE_ALIGN_8K);
 	PAGE_MALLOC_TEST(PAGE_ORDER_4K,PAGE_ALIGN_128K);
 	PAGE_MALLOC_TEST(PAGE_ORDER_8K,PAGE_ALIGN_8K);

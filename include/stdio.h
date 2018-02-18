@@ -43,9 +43,5 @@ extern unsigned char getc(void);
 
 int printf(const char *fmt, ...);
 int scanf(const char * fmt, ...);
-#ifdef KERNEL_DEBUG
-#define dbgprintf(fmt,args...) printf(fmt,##args)
-#else
-#define dbgprintf(fmt,args...)
-#endif
+
 #endif /* _STDIO_H */
