@@ -1,32 +1,33 @@
-CROSS_COMPILE=arm-none-linux-gnueabi-
-CC			=$(CROSS_COMPILE)gcc
-LD			=$(CROSS_COMPILE)ld
-OBJCOPY		=$(CROSS_COMPILE)objcopy
-OBJDUMP		=$(CROSS_COMPILE)objdump
-AR			=$(CROSS_COMPILE)ar
-RM			=rm
-#PWDPATH		=$(shell pwd)
-#windowsd下使用git shell，此方法将头文件目录传给gcc时目录有问题
-PWDPATH		=C:/Users/ZhUyU/Desktop/mOS
-#WFLAGS		:= -Wall
-WFLAGS		:= -w
-CFLAGS 		:= -std=gnu99 $(WFLAGS) -O2 -fno-builtin \
-			-march=armv4t -mtune=arm920t -nostdlib -nostdinc -msoft-float -fsigned-char
-INCLUDEDIR 	:= $(PWDPATH)/include -iquote$(PWDPATH)/fs/yaffs2/direct -iquote$(PWDPATH)/fs/yaffs2/direct/port
-CPPFLAGS   	:= -I$(INCLUDEDIR)
-LIBDIR		:= $(shell dirname `$(CC) $(CFLAGS) -print-libgcc-file-name`)
-FSDIR		:= fs/yaffs2/direct
-FSTOOLSDIR	:= fs/yaffs2/utils
-LDFLAGS		:= -L $(LIBDIR) -lgcc
-objs		:= init/init_builtin.o
-objs		+= drivers/drivers_builtin.o drivers/usbslave/usbslave_builtin.o
-objs		+= fs/fs_builtin.o
-objs		+= kernel/kernel_builtin.o
-objs		+= mm/mm_builtin.o
-objs		+= $(FSDIR)/yaffs2.o
-objs		+= lib/libc.a
-libobjs		+= $(LIBDIR)/libgcc.a			
-			
+CROSS_COMPILE	= arm-none-linux-gnueabi-
+AS				= $(CROSS_COMPILE)as
+LD				= $(CROSS_COMPILE)ld
+CC				= $(CROSS_COMPILE)gcc
+CPP				= $(CC) -E
+AR				= $(CROSS_COMPILE)ar
+NM				= $(CROSS_COMPILE)nm
+STRIP			= $(CROSS_COMPILE)strip
+OBJCOPY			= $(CROSS_COMPILE)objcopy
+OBJDUMP			= $(CROSS_COMPILE)objdump
+RM				=rm
+
+PWDPATH			= $(subst /c,c:,$(shell pwd))
+#WFLAGS			:= -Wall
+WFLAGS			:= -w
+CFLAGS 			:= -std=gnu99 $(WFLAGS) -O2 -fno-builtin \
+				-march=armv4t -mtune=arm920t -nostdlib -nostdinc -msoft-float -fsigned-char
+INCLUDEDIR 		:= $(PWDPATH)/include -iquote$(PWDPATH)/fs/yaffs2/direct -iquote$(PWDPATH)/fs/yaffs2/direct/port
+CPPFLAGS   		:= -I$(INCLUDEDIR)
+FSDIR			:= fs/yaffs2/direct
+FSTOOLSDIR		:= fs/yaffs2/utils
+LDFLAGS			:= -L$(shell dirname `$(CC) $(CFLAGS) -print-libgcc-file-name`) -lgcc
+objs			:= init/init_builtin.o
+objs			+= drivers/drivers_builtin.o drivers/usbslave/usbslave_builtin.o
+objs			+= fs/fs_builtin.o
+objs			+= kernel/kernel_builtin.o
+objs			+= mm/mm_builtin.o
+objs			+= $(FSDIR)/yaffs2.o
+objs			+= lib/libc.a
+
 			
 export CC LD OBJCOPY OBJDUMP AR CFLAGS PWDPATH INCLUDEDIR
 
@@ -36,7 +37,7 @@ all:compile bootloader.bin
 
 bootloader.bin:$(objs)
 	@echo LD	bootloader_elf
-	@$(LD) $(LDFLAGS) -Tbootloader.lds -o bootloader.elf $(objs) $(libobjs)  >/dev/null
+	@$(LD) -Tbootloader.lds -o bootloader.elf $(objs) $(LDFLAGS)>/dev/null
 	@echo OBJCOPY	$@
 	@$(OBJCOPY) -O binary -S bootloader.elf $@  >/dev/null
 
