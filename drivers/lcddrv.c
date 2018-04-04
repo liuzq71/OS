@@ -144,7 +144,7 @@ void Tft_Lcd_Init(int type)
         LCDCON3 = (HBPD_240320<<19) | (HOZVAL_TFT_240320<<8) | (HFPD_240320);
         LCDCON4 = HSPW_240320;
         LCDCON5 = (FORMAT8BPP_565<<11) | (HSYNC_INV<<9) | (VSYNC_INV<<8) | \
-                  (HWSWP<<1);
+                  (HWSWP<<0);
 
         /*
          * ÉèÖÃLCD¿ØÖÆÆ÷µÄµØÖ·¼Ä´æÆ÷LCDSADDR1~3
@@ -266,7 +266,7 @@ void Tft_Lcd_Init(int type)
         LCDCON3 = (1<<19) | (479<<8) | (1);
         LCDCON4 = 40;
         LCDCON5 = (FORMAT8BPP_565<<11) | (HSYNC_INV<<9) | (VSYNC_INV<<8) | \
-                  (HWSWP<<1);
+                  (HWSWP<<0);
 
         /*
          * ÉèÖÃLCD¿ØÖÆÆ÷µÄµØÖ·¼Ä´æÆ÷LCDSADDR1~3
@@ -388,7 +388,7 @@ void Tft_Lcd_Init(int type)
         LCDCON3 = (HBPD_640480<<19) | (HOZVAL_TFT_640480<<8) | (HFPD_640480);
         LCDCON4 = HSPW_640480;
         LCDCON5 = (FORMAT8BPP_565<<11) | (HSYNC_INV<<9) | (VSYNC_INV<<8) | \
-                  (HWSWP<<1);
+                  (HWSWP<<0);
 
         /*
          * ÉèÖÃLCD¿ØÖÆÆ÷µÄµØÖ·¼Ä´æÆ÷LCDSADDR1~3
