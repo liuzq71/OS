@@ -11,7 +11,7 @@
 
 typedef unsigned int		dev_t;
 typedef unsigned int		mode_t;
-typedef unsigned long		off_t;
+typedef long int			off_t;
 typedef long long			loff_t;
 
 #endif
